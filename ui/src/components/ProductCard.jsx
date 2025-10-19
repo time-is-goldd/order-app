@@ -9,11 +9,34 @@ const ProductCard = ({
   stockStatus, 
   stockCount 
 }) => {
+  // 이미지 파일명 생성 (메뉴명을 기반으로)
+  const getImageName = (productName) => {
+    const nameMap = {
+      '아메리카노(ICE)': 'americano-ice - 복사본',
+      '아메리카노(HOT)': 'americano-hot - 복사본',
+      '카페라떼': 'caffe-latte - 복사본'
+    }
+    return nameMap[productName] || 'default'
+  }
+
+  const imageName = getImageName(product.name)
+  const imagePath = `/images/${imageName}.jpg`
+
   return (
     <div className="product-card">
       <div className="product-image">
-        <div className="product-image-display">
-          {product.image}
+        <img 
+          src={imagePath} 
+          alt={product.name}
+          className="product-image-display"
+          onError={(e) => {
+            // 이미지 로드 실패 시 기본 이미지 또는 이모지 표시
+            e.target.style.display = 'none'
+            e.target.nextSibling.style.display = 'block'
+          }}
+        />
+        <div className="product-image-fallback" style={{ display: 'none' }}>
+          ☕
         </div>
       </div>
       

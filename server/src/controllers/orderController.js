@@ -41,12 +41,16 @@ const createOrder = async (req, res) => {
       );
     }
 
+    // 주문 번호 생성 (YYYYMMDD-HHMMSS-XXX 형식)
+    const now = new Date();
+    const orderNumber = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+
     // 주문 생성
     const orderResult = await client.query(
-      `INSERT INTO orders (order_items, total_amount, status, order_time) 
-       VALUES ($1, $2, 'pending', NOW()) 
+      `INSERT INTO orders (order_number, order_items, total_amount, status, order_time) 
+       VALUES ($1, $2, $3, 'pending', NOW()) 
        RETURNING *`,
-      [JSON.stringify(order_items), total_amount]
+      [orderNumber, JSON.stringify(order_items), total_amount]
     );
 
     await client.query('COMMIT');

@@ -1,4 +1,5 @@
-import { createContext, useContext, useReducer } from 'react'
+import { createContext, useContext, useReducer, useEffect, useState } from 'react'
+import { adminAPI } from '../services/api'
 
 const InventoryContext = createContext()
 
@@ -28,17 +29,53 @@ const inventoryReducer = (state, action) => {
 }
 
 export const InventoryProvider = ({ children }) => {
-  const [inventory, dispatch] = useReducer(inventoryReducer, {
-    'americano-ice': 10,
-    'americano-hot': 10,
-    'cafe-latte': 10,
-    'cappuccino': 10,
-    'mocha': 10,
-    'vanilla-latte': 10
-  })
+  const [inventory, dispatch] = useReducer(inventoryReducer, {})
+  const [loading, setLoading] = useState(false)
 
-  const updateInventory = (productId, change) => {
-    dispatch({ type: 'UPDATE_INVENTORY', payload: { productId, change } })
+  // 서버에서 재고 데이터 로드
+  useEffect(() => {
+    const loadInventory = async () => {
+      try {
+        setLoading(true)
+        const response = await adminAPI.getInventory()
+        if (response.success) {
+          const inventoryData = {}
+          response.data.forEach(item => {
+            inventoryData[item.id] = item.stock_quantity
+          })
+          setInventory(inventoryData)
+        }
+      } catch (error) {
+        console.error('재고 데이터 로드 실패:', error)
+        // 기본값으로 폴백
+        setInventory({
+          'americano-ice': 10,
+          'americano-hot': 10,
+          'cafe-latte': 10,
+          'cappuccino': 10,
+          'mocha': 10,
+          'vanilla-latte': 10
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadInventory()
+  }, [])
+
+  const updateInventory = async (productId, change) => {
+    try {
+      // 서버에 재고 업데이트 요청
+      const newQuantity = inventory[productId] + change
+      await adminAPI.updateInventory(productId, newQuantity)
+      
+      // 로컬 상태 업데이트
+      dispatch({ type: 'UPDATE_INVENTORY', payload: { productId, change } })
+    } catch (error) {
+      console.error('재고 업데이트 실패:', error)
+      throw error
+    }
   }
 
   const reduceInventoryForOrder = (items) => {
@@ -58,6 +95,7 @@ export const InventoryProvider = ({ children }) => {
 
   const value = {
     inventory,
+    loading,
     updateInventory,
     reduceInventoryForOrder,
     setInventory,

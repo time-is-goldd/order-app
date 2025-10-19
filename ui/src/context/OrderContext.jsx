@@ -1,4 +1,5 @@
-import { createContext, useContext, useReducer } from 'react'
+import { createContext, useContext, useReducer, useEffect, useState } from 'react'
+import { orderAPI, adminAPI } from '../services/api'
 
 const OrderContext = createContext()
 
@@ -32,6 +33,12 @@ const orderReducer = (state, action) => {
         orders: state.orders.filter(order => order.id !== action.payload)
       }
     
+    case 'SET_ORDERS':
+      return {
+        ...state,
+        orders: action.payload
+      }
+    
     default:
       return state
   }
@@ -41,13 +48,50 @@ export const OrderProvider = ({ children }) => {
   const [state, dispatch] = useReducer(orderReducer, {
     orders: []
   })
+  const [loading, setLoading] = useState(false)
 
-  const addOrder = (orderData) => {
-    dispatch({ type: 'ADD_ORDER', payload: orderData })
+  // 서버에서 주문 데이터 로드
+  useEffect(() => {
+    const loadOrders = async () => {
+      try {
+        setLoading(true)
+        const response = await adminAPI.getAdminOrders()
+        if (response.success) {
+          dispatch({ type: 'SET_ORDERS', payload: response.data })
+        }
+      } catch (error) {
+        console.error('주문 데이터 로드 실패:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadOrders()
+  }, [])
+
+  const addOrder = async (orderData) => {
+    try {
+      const response = await orderAPI.createOrder(orderData)
+      if (response.success) {
+        dispatch({ type: 'ADD_ORDER', payload: response.data })
+        return response.data
+      }
+    } catch (error) {
+      console.error('주문 생성 실패:', error)
+      throw error
+    }
   }
 
-  const updateOrderStatus = (orderId, status) => {
-    dispatch({ type: 'UPDATE_ORDER_STATUS', payload: { orderId, status } })
+  const updateOrderStatus = async (orderId, status) => {
+    try {
+      const response = await orderAPI.updateOrderStatus(orderId, status)
+      if (response.success) {
+        dispatch({ type: 'UPDATE_ORDER_STATUS', payload: { orderId, status } })
+      }
+    } catch (error) {
+      console.error('주문 상태 업데이트 실패:', error)
+      throw error
+    }
   }
 
   const removeOrder = (orderId) => {
@@ -69,6 +113,7 @@ export const OrderProvider = ({ children }) => {
 
   const value = {
     ...state,
+    loading,
     addOrder,
     updateOrderStatus,
     removeOrder,

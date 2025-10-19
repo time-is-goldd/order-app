@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ProductCard from '../components/ProductCard'
 import Cart from '../components/Cart'
 import Notification from '../components/Notification'
 import { useCart } from '../context/CartContext'
 import { useInventory } from '../context/InventoryContext'
-import { PRODUCTS, OPTIONS } from '../utils/constants'
+import { menuAPI } from '../services/api'
+import { OPTIONS } from '../utils/constants'
 import { formatPrice } from '../utils/helpers'
 import './OrderPage.css'
 
@@ -12,16 +13,35 @@ const OrderPage = () => {
   const { addToCart, getCartItemQuantity } = useCart()
   const { inventory, getInventoryStatus } = useInventory()
   const [notification, setNotification] = useState(null)
-  const [selectedOptions, setSelectedOptions] = useState({
-    'americano-ice': { shot: false, syrup: false },
-    'americano-hot': { shot: false, syrup: false },
-    'cafe-latte': { shot: false, syrup: false },
-    'cappuccino': { shot: false, syrup: false },
-    'mocha': { shot: false, syrup: false },
-    'vanilla-latte': { shot: false, syrup: false }
-  })
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedOptions, setSelectedOptions] = useState({})
 
-  const products = PRODUCTS
+  // 서버에서 메뉴 데이터 로드
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setLoading(true)
+        const response = await menuAPI.getMenus()
+        if (response.success) {
+          setProducts(response.data)
+          // 옵션 상태 초기화
+          const optionsState = {}
+          response.data.forEach(product => {
+            optionsState[product.id] = { shot: false, syrup: false }
+          })
+          setSelectedOptions(optionsState)
+        }
+      } catch (error) {
+        console.error('메뉴 데이터 로드 실패:', error)
+        showNotification('메뉴를 불러오는데 실패했습니다.', 'error')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProducts()
+  }, [])
 
   const showNotification = (message, type = 'info') => {
     setNotification({ message, type })
@@ -80,6 +100,16 @@ const OrderPage = () => {
     showNotification(`${product.name}이(가) 장바구니에 추가되었습니다.`, 'success')
   }
 
+  if (loading) {
+    return (
+      <div className="order-page">
+        <div className="products-section">
+          <p>메뉴를 불러오는 중...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="order-page">
       {notification && (
@@ -100,7 +130,7 @@ const OrderPage = () => {
               <ProductCard
                 key={product.id}
                 product={product}
-                selectedOptions={selectedOptions[product.id]}
+                selectedOptions={selectedOptions[product.id] || { shot: false, syrup: false }}
                 onOptionChange={(optionType, checked) => 
                   handleOptionChange(product.id, optionType, checked)
                 }

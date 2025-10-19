@@ -21,22 +21,36 @@ const Cart = () => {
     updateQuantity(index, newQuantity)
   }
 
-  const handleOrder = () => {
+  const handleOrder = async () => {
     const validation = validateOrder(items)
     if (!validation.isValid) {
       alert(validation.message)
       return
     }
 
-    const orderData = {
-      items: [...items],
-      totalPrice: getTotalPrice(),
-      status: 'pending'
-    }
+    try {
+      // API 형식에 맞게 주문 데이터 변환
+      const orderItems = items.map(item => ({
+        menu_id: item.id,
+        menu_name: item.name,
+        quantity: item.quantity,
+        options: item.options,
+        item_price: item.totalPrice,
+        total_price: item.totalPrice * item.quantity
+      }))
 
-    addOrder(orderData)
-    clearCart()
-    alert('주문이 완료되었습니다!')
+      const orderData = {
+        order_items: orderItems,
+        total_amount: getTotalPrice()
+      }
+
+      await addOrder(orderData)
+      clearCart()
+      alert('주문이 완료되었습니다!')
+    } catch (error) {
+      console.error('주문 실패:', error)
+      alert('주문 처리 중 오류가 발생했습니다. 다시 시도해주세요.')
+    }
   }
 
   if (items.length === 0) {

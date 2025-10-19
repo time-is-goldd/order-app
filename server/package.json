@@ -10,7 +10,11 @@
     "db:test": "node src/scripts/testConnection.js",
     "db:auth": "node src/scripts/testAuth.js",
     "db:create": "node src/scripts/createDatabase.js",
-    "db:init": "node src/scripts/initDatabase.js"
+    "db:init": "node src/scripts/initDatabase.js",
+    "db:update": "node src/scripts/updateSchema.js",
+    "db:menus": "node src/scripts/updateMenus.js",
+    "db:price": "node src/scripts/fixPriceFormat.js",
+    "db:remove-vanilla": "node src/scripts/removeVanillaLatte.js"
   },
   "keywords": [
     "express",

@@ -96,6 +96,14 @@
   border-color: #f44336;
 }
 
+.inventory-btn.set-stock {
+  color: #2196F3;
+  border-color: #2196F3;
+  width: auto;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
 .inventory-count {
   font-size: 1.2rem;
   font-weight: bold;

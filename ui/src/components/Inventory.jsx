@@ -1,18 +1,37 @@
+import { useState, useEffect } from 'react'
 import { useInventory } from '../context/InventoryContext'
+import { adminAPI } from '../services/api'
 import './Inventory.css'
 
 const Inventory = () => {
   const { inventory, updateInventory, getInventoryStatus } = useInventory()
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
   
-  // 모든 메뉴 표시
-  const products = [
-    { id: 'americano-ice', name: '아메리카노 (ICE)' },
-    { id: 'americano-hot', name: '아메리카노 (HOT)' },
-    { id: 'cafe-latte', name: '카페라떼' },
-    { id: 'cappuccino', name: '카푸치노' },
-    { id: 'mocha', name: '모카' },
-    { id: 'vanilla-latte', name: '바닐라 라떼' }
-  ]
+  // 서버에서 메뉴 데이터 로드
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setLoading(true)
+        const response = await adminAPI.getInventory()
+        if (response.success) {
+          setProducts(response.data)
+        }
+      } catch (error) {
+        console.error('메뉴 데이터 로드 실패:', error)
+        // 기본값으로 폴백
+        setProducts([
+          { id: 1, name: '아메리카노(ICE)', stock_quantity: 0 },
+          { id: 2, name: '아메리카노(HOT)', stock_quantity: 0 },
+          { id: 3, name: '카페라떼', stock_quantity: 0 }
+        ])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProducts()
+  }, [])
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -21,6 +40,43 @@ const Inventory = () => {
       case '정상': return '#4caf50'
       default: return '#666'
     }
+  }
+
+  const handleUpdateInventory = async (productId, change) => {
+    try {
+      await updateInventory(productId, change)
+      // 재고 업데이트 후 메뉴 목록 새로고침
+      const response = await adminAPI.getInventory()
+      if (response.success) {
+        setProducts(response.data)
+      }
+    } catch (error) {
+      console.error('재고 업데이트 실패:', error)
+      alert('재고 업데이트에 실패했습니다.')
+    }
+  }
+
+  const handleSetStock = async (productId, stockQuantity) => {
+    try {
+      await adminAPI.updateInventory(productId, stockQuantity)
+      // 재고 업데이트 후 메뉴 목록 새로고침
+      const response = await adminAPI.getInventory()
+      if (response.success) {
+        setProducts(response.data)
+      }
+    } catch (error) {
+      console.error('재고 설정 실패:', error)
+      alert('재고 설정에 실패했습니다.')
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="admin-section inventory">
+        <h2>재고 현황</h2>
+        <p>로딩 중...</p>
+      </div>
+    )
   }
 
   return (
@@ -33,7 +89,7 @@ const Inventory = () => {
             <div key={product.id} className="inventory-item">
               <h3 className="product-name">{product.name}</h3>
               <div className="inventory-info">
-                <span className="inventory-count">{inventory[product.id]}개</span>
+                <span className="inventory-count">{product.stock_quantity}개</span>
                 <span 
                   className="inventory-status" 
                   style={{ color: getStatusColor(status) }}
@@ -43,16 +99,23 @@ const Inventory = () => {
               </div>
               <div className="inventory-controls">
                 <button 
-                  onClick={() => updateInventory(product.id, -1)}
+                  onClick={() => handleUpdateInventory(product.id, -1)}
                   className="inventory-btn minus"
                 >
                   -
                 </button>
                 <button 
-                  onClick={() => updateInventory(product.id, 1)}
+                  onClick={() => handleUpdateInventory(product.id, 1)}
                   className="inventory-btn plus"
                 >
                   +
+                </button>
+                <button 
+                  onClick={() => handleSetStock(product.id, 10)}
+                  className="inventory-btn set-stock"
+                  title="재고를 10개로 설정"
+                >
+                  10개
                 </button>
               </div>
             </div>

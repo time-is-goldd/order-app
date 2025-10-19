@@ -6,7 +6,7 @@ const dbConfig = {
   port: process.env.DB_PORT || 5432,
   database: process.env.DB_NAME || 'coffee_order_db',
   user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'password',
+  password: process.env.DB_PASSWORD || 'y5475986!',
 };
 
 // PostgreSQL 연결 풀 생성
