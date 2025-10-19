@@ -1,0 +1,26 @@
+{
+  "name": "coffee-order-app",
+  "version": "1.0.0",
+  "description": "Coffee Order Application",
+  "main": "server/src/app.js",
+  "scripts": {
+    "start": "cd server && npm start",
+    "dev": "cd server && npm run dev",
+    "build": "cd server && npm install",
+    "install-server": "cd server && npm install",
+    "install-ui": "cd ui && npm install",
+    "build-ui": "cd ui && npm run build"
+  },
+  "keywords": [
+    "coffee",
+    "order",
+    "react",
+    "nodejs",
+    "express"
+  ],
+  "author": "Coffee Order Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
