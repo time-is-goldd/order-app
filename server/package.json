@@ -14,7 +14,8 @@
     "db:update": "node src/scripts/updateSchema.js",
     "db:menus": "node src/scripts/updateMenus.js",
     "db:price": "node src/scripts/fixPriceFormat.js",
-    "db:remove-vanilla": "node src/scripts/removeVanillaLatte.js"
+    "db:remove-vanilla": "node src/scripts/removeVanillaLatte.js",
+    "db:init-render": "node src/scripts/initRenderDatabase.js"
   },
   "keywords": [
     "express",

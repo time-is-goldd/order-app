@@ -6,7 +6,13 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // 미들웨어 설정
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://coffee-order-frontend.onrender.com' // Render 프론트엔드 URL
+  ],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
