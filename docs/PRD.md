@@ -186,3 +186,248 @@
 - 재고 카드는 가로 3개 고정 배치
 - 주문 목록은 세로 스크롤로 확장 가능
 - 섹션별로 명확한 구분과 적절한 여백
+
+## 6. 백엔드 개발 PRD
+
+### 6.1 데이터 모델 설계
+
+#### 6.1.1 Menus 테이블
+커피 메뉴 정보를 저장하는 테이블입니다.
+
+| 컬럼명 | 데이터 타입 | 제약조건 | 설명 |
+|--------|-------------|----------|------|
+| id | SERIAL | PRIMARY KEY | 메뉴 고유 ID |
+| name | VARCHAR(100) | NOT NULL | 커피 이름 |
+| description | TEXT | | 메뉴 설명 |
+| price | INTEGER | NOT NULL | 가격 (원) |
+| image | VARCHAR(255) | | 이미지 URL 또는 이모지 |
+| stock_quantity | INTEGER | NOT NULL DEFAULT 0 | 재고 수량 |
+| created_at | TIMESTAMP | DEFAULT NOW() | 생성 시간 |
+| updated_at | TIMESTAMP | DEFAULT NOW() | 수정 시간 |
+
+#### 6.1.2 Options 테이블
+메뉴 옵션 정보를 저장하는 테이블입니다.
+
+| 컬럼명 | 데이터 타입 | 제약조건 | 설명 |
+|--------|-------------|----------|------|
+| id | SERIAL | PRIMARY KEY | 옵션 고유 ID |
+| name | VARCHAR(100) | NOT NULL | 옵션 이름 |
+| price | INTEGER | NOT NULL DEFAULT 0 | 옵션 추가 가격 (원) |
+| menu_id | INTEGER | FOREIGN KEY | 연결할 메뉴 ID |
+| created_at | TIMESTAMP | DEFAULT NOW() | 생성 시간 |
+
+#### 6.1.3 Orders 테이블
+주문 정보를 저장하는 테이블입니다.
+
+| 컬럼명 | 데이터 타입 | 제약조건 | 설명 |
+|--------|-------------|----------|------|
+| id | SERIAL | PRIMARY KEY | 주문 고유 ID |
+| order_time | TIMESTAMP | NOT NULL DEFAULT NOW() | 주문 일시 |
+| order_items | JSONB | NOT NULL | 주문 내용 (메뉴, 수량, 옵션, 금액) |
+| total_amount | INTEGER | NOT NULL | 총 주문 금액 |
+| status | VARCHAR(20) | NOT NULL DEFAULT 'pending' | 주문 상태 |
+| created_at | TIMESTAMP | DEFAULT NOW() | 생성 시간 |
+| updated_at | TIMESTAMP | DEFAULT NOW() | 수정 시간 |
+
+### 6.2 사용자 흐름 및 데이터 스키마
+
+#### 6.2.1 메뉴 조회 흐름
+1. **프론트엔드**: 메뉴 목록 조회 요청
+2. **백엔드**: Menus 테이블에서 모든 메뉴 정보 조회
+3. **백엔드**: Options 테이블에서 각 메뉴의 옵션 정보 조회
+4. **백엔드**: 재고 수량 정보와 함께 메뉴 목록 반환
+5. **프론트엔드**: 받은 데이터로 메뉴 카드 렌더링
+
+#### 6.2.2 주문 처리 흐름
+1. **프론트엔드**: 장바구니 정보와 함께 주문 요청
+2. **백엔드**: 주문 정보를 Orders 테이블에 저장
+3. **백엔드**: 주문된 메뉴의 재고 수량을 Menus 테이블에서 차감
+4. **백엔드**: 주문 완료 응답 및 주문 ID 반환
+5. **프론트엔드**: 주문 완료 알림 표시
+
+#### 6.2.3 주문 상태 관리 흐름
+1. **프론트엔드**: 관리자 화면에서 주문 목록 조회 요청
+2. **백엔드**: Orders 테이블에서 주문 목록 조회 (상태별 필터링)
+3. **백엔드**: 주문 목록과 상태별 통계 반환
+4. **프론트엔드**: 주문 현황 화면에 데이터 표시
+5. **상태 변경**: 관리자가 주문 상태 변경 시 Orders 테이블 업데이트
+
+### 6.3 API 설계
+
+#### 6.3.1 메뉴 관련 API
+
+##### GET /api/menus
+메뉴 목록을 조회합니다.
+- **요청**: 없음
+- **응답**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "아메리카노(ICE)",
+      "description": "깔끔하고 시원한 아이스 아메리카노",
+      "price": 4000,
+      "image": "🧊☕",
+      "stock_quantity": 10,
+      "options": [
+        {
+          "id": 1,
+          "name": "샷 추가",
+          "price": 500
+        },
+        {
+          "id": 2,
+          "name": "시럽 추가",
+          "price": 0
+        }
+      ]
+    }
+  ]
+}
+```
+
+##### GET /api/menus/:id
+특정 메뉴의 상세 정보를 조회합니다.
+- **요청**: URL 파라미터로 메뉴 ID
+- **응답**: 메뉴 상세 정보 및 옵션 목록
+
+##### PUT /api/menus/:id/stock
+메뉴의 재고 수량을 수정합니다.
+- **요청**:
+```json
+{
+  "stock_quantity": 15
+}
+```
+- **응답**: 수정된 메뉴 정보
+
+#### 6.3.2 주문 관련 API
+
+##### POST /api/orders
+새로운 주문을 생성합니다.
+- **요청**:
+```json
+{
+  "order_items": [
+    {
+      "menu_id": 1,
+      "menu_name": "아메리카노(ICE)",
+      "quantity": 2,
+      "options": ["샷 추가"],
+      "item_price": 4500,
+      "total_price": 9000
+    }
+  ],
+  "total_amount": 9000
+}
+```
+- **응답**:
+```json
+{
+  "success": true,
+  "data": {
+    "order_id": 123,
+    "order_time": "2024-01-15T10:30:00Z",
+    "total_amount": 9000,
+    "status": "pending"
+  }
+}
+```
+
+##### GET /api/orders
+주문 목록을 조회합니다.
+- **요청**: 쿼리 파라미터 (status, page, limit)
+- **응답**: 주문 목록 및 페이징 정보
+
+##### GET /api/orders/:id
+특정 주문의 상세 정보를 조회합니다.
+- **요청**: URL 파라미터로 주문 ID
+- **응답**: 주문 상세 정보
+
+##### PUT /api/orders/:id/status
+주문 상태를 변경합니다.
+- **요청**:
+```json
+{
+  "status": "accepted"
+}
+```
+- **응답**: 업데이트된 주문 정보
+
+#### 6.3.3 관리자 관련 API
+
+##### GET /api/admin/dashboard
+관리자 대시보드 통계 정보를 조회합니다.
+- **요청**: 없음
+- **응답**:
+```json
+{
+  "success": true,
+  "data": {
+    "total_orders": 25,
+    "pending_orders": 3,
+    "accepted_orders": 5,
+    "completed_orders": 17
+  }
+}
+```
+
+### 6.4 데이터베이스 관계
+
+#### 6.4.1 테이블 관계도
+```
+Menus (1) ----< Options (N)
+Menus (1) ----< Orders (N) [주문 아이템을 통해]
+```
+
+#### 6.4.2 인덱스 설계
+- **Menus**: name, stock_quantity에 인덱스
+- **Orders**: order_time, status에 인덱스
+- **Options**: menu_id에 외래키 인덱스
+
+### 6.5 에러 처리
+
+#### 6.5.1 공통 에러 응답 형식
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "잘못된 요청입니다.",
+    "details": "필수 필드가 누락되었습니다."
+  }
+}
+```
+
+#### 6.5.2 주요 에러 코드
+- `MENU_NOT_FOUND`: 메뉴를 찾을 수 없음
+- `INSUFFICIENT_STOCK`: 재고 부족
+- `ORDER_NOT_FOUND`: 주문을 찾을 수 없음
+- `INVALID_STATUS`: 잘못된 주문 상태
+- `VALIDATION_ERROR`: 입력 데이터 검증 실패
+
+### 6.6 성능 고려사항
+
+#### 6.6.1 데이터베이스 최적화
+- 자주 조회되는 메뉴 정보는 캐싱 고려
+- 주문 통계는 실시간 계산 대신 주기적 배치 처리 고려
+- 대용량 주문 데이터 처리를 위한 페이징 구현
+
+#### 6.6.2 API 최적화
+- 메뉴 목록 조회 시 옵션 정보를 JOIN으로 한 번에 조회
+- 주문 상태 변경 시 재고 업데이트를 트랜잭션으로 처리
+- 불필요한 데이터 전송 방지를 위한 응답 필드 선택
+
+### 6.7 보안 고려사항
+
+#### 6.7.1 입력 검증
+- 모든 입력 데이터에 대한 유효성 검사
+- SQL Injection 방지를 위한 파라미터화된 쿼리 사용
+- XSS 방지를 위한 입력 데이터 이스케이핑
+
+#### 6.7.2 접근 제어
+- 관리자 기능에 대한 접근 권한 검증
+- API 요청 빈도 제한 (Rate Limiting)
+- CORS 설정으로 프론트엔드 도메인만 허용

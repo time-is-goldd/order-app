@@ -1,0 +1,9 @@
+# Ignore node_modules but allow .env for AI assistance
+node_modules/
+*.log
+coverage/
+.nyc_output/
+
+# Keep .env accessible for AI (remove from cursorignore)
+# .env
+
