@@ -22,7 +22,7 @@ const OrderList = ({ orders, onUpdateOrderStatus }) => {
             className="status-btn accept"
             onClick={() => onUpdateOrderStatus(order.id, 'accepted')}
           >
-            주문 접수
+            제조 시작
           </button>
         )
       case 'accepted':
@@ -62,7 +62,11 @@ const OrderList = ({ orders, onUpdateOrderStatus }) => {
                 <div className="order-items">
                   {order.items.map((item, index) => (
                     <div key={index} className="order-item">
-                      {item.name} {item.options.length > 0 && `(${item.options.join(', ')})`} x {item.quantity}
+                      <span className="item-name">{item.name}</span>
+                      {item.options.length > 0 && (
+                        <span className="item-options"> ({item.options.join(', ')})</span>
+                      )}
+                      <span className="item-quantity"> x {item.quantity}</span>
                     </div>
                   ))}
                 </div>
@@ -86,7 +90,11 @@ const OrderList = ({ orders, onUpdateOrderStatus }) => {
                 <div className="order-items">
                   {order.items.map((item, index) => (
                     <div key={index} className="order-item">
-                      {item.name} {item.options.length > 0 && `(${item.options.join(', ')})`} x {item.quantity}
+                      <span className="item-name">{item.name}</span>
+                      {item.options.length > 0 && (
+                        <span className="item-options"> ({item.options.join(', ')})</span>
+                      )}
+                      <span className="item-quantity"> x {item.quantity}</span>
                     </div>
                   ))}
                 </div>

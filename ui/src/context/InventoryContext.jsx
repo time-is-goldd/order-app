@@ -49,11 +49,19 @@ export const InventoryProvider = ({ children }) => {
     dispatch({ type: 'SET_INVENTORY', payload: newInventory })
   }
 
+  const getInventoryStatus = (productId) => {
+    const count = inventory[productId] || 0
+    if (count === 0) return '품절'
+    if (count < 5) return '주의'
+    return '정상'
+  }
+
   const value = {
     inventory,
     updateInventory,
     reduceInventoryForOrder,
-    setInventory
+    setInventory,
+    getInventoryStatus
   }
 
   return (

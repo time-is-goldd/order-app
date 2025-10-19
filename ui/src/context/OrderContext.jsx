@@ -60,9 +60,9 @@ export const OrderProvider = ({ children }) => {
 
   const getOrderStats = () => {
     const total = state.orders.length
-    const pending = getOrdersByStatus('pending').length
-    const accepted = getOrdersByStatus('accepted').length
-    const completed = getOrdersByStatus('completed').length
+    const pending = getOrdersByStatus('pending').length  // 주문 접수
+    const accepted = getOrdersByStatus('accepted').length  // 제조 중
+    const completed = getOrdersByStatus('completed').length  // 제조 완료
 
     return { total, pending, accepted, completed }
   }

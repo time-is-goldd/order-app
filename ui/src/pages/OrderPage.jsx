@@ -2,10 +2,12 @@ import { useState } from 'react'
 import ProductCard from '../components/ProductCard'
 import Cart from '../components/Cart'
 import { useCart } from '../context/CartContext'
+import { useInventory } from '../context/InventoryContext'
 import './OrderPage.css'
 
 const OrderPage = () => {
   const { addToCart } = useCart()
+  const { inventory, getInventoryStatus } = useInventory()
   const [selectedOptions, setSelectedOptions] = useState({
     'americano-ice': { shot: false, syrup: false },
     'americano-hot': { shot: false, syrup: false },
@@ -71,6 +73,13 @@ const OrderPage = () => {
   }
 
   const handleAddToCart = (product) => {
+    const stockStatus = getInventoryStatus(product.id)
+    
+    if (stockStatus === '품절') {
+      alert(`${product.name}은(는) 품절되었습니다.`)
+      return
+    }
+
     const options = selectedOptions[product.id]
     const optionsText = []
     let additionalPrice = 0
@@ -98,17 +107,25 @@ const OrderPage = () => {
     <div className="order-page">
       <div className="products-section">
         <div className="products-grid">
-          {products.map(product => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              selectedOptions={selectedOptions[product.id]}
-              onOptionChange={(optionType, checked) => 
-                handleOptionChange(product.id, optionType, checked)
-              }
-              onAddToCart={() => handleAddToCart(product)}
-            />
-          ))}
+          {products.map(product => {
+            const stockStatus = getInventoryStatus(product.id)
+            const isOutOfStock = stockStatus === '품절'
+            
+            return (
+              <ProductCard
+                key={product.id}
+                product={product}
+                selectedOptions={selectedOptions[product.id]}
+                onOptionChange={(optionType, checked) => 
+                  handleOptionChange(product.id, optionType, checked)
+                }
+                onAddToCart={() => handleAddToCart(product)}
+                isOutOfStock={isOutOfStock}
+                stockStatus={stockStatus}
+                stockCount={inventory[product.id]}
+              />
+            )
+          })}
         </div>
       </div>
       <Cart />

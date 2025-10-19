@@ -7,7 +7,7 @@ import './AdminPage.css'
 
 const AdminPage = () => {
   const { orders, updateOrderStatus } = useOrders()
-  const { inventory, updateInventory, reduceInventoryForOrder } = useInventory()
+  const { reduceInventoryForOrder } = useInventory()
 
   const handleOrderStatusUpdate = (orderId, newStatus) => {
     updateOrderStatus(orderId, newStatus)
@@ -24,10 +24,7 @@ const AdminPage = () => {
   return (
     <div className="admin-page">
       <Dashboard orders={orders} />
-      <Inventory 
-        inventory={inventory} 
-        onUpdateInventory={updateInventory}
-      />
+      <Inventory />
       <OrderList 
         orders={orders}
         onUpdateOrderStatus={handleOrderStatusUpdate}
