@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import ProductCard from '../components/ProductCard'
 import Cart from '../components/Cart'
+import Notification from '../components/Notification'
 import { useCart } from '../context/CartContext'
 import { useInventory } from '../context/InventoryContext'
+import { PRODUCTS, OPTIONS } from '../utils/constants'
+import { formatPrice } from '../utils/helpers'
 import './OrderPage.css'
 
 const OrderPage = () => {
-  const { addToCart } = useCart()
+  const { addToCart, getCartItemQuantity } = useCart()
   const { inventory, getInventoryStatus } = useInventory()
+  const [notification, setNotification] = useState(null)
   const [selectedOptions, setSelectedOptions] = useState({
     'americano-ice': { shot: false, syrup: false },
     'americano-hot': { shot: false, syrup: false },
@@ -17,50 +21,11 @@ const OrderPage = () => {
     'vanilla-latte': { shot: false, syrup: false }
   })
 
-  const products = [
-    {
-      id: 'americano-ice',
-      name: '아메리카노(ICE)',
-      price: 4000,
-      description: '깔끔하고 시원한 아이스 아메리카노',
-      image: '🧊☕'
-    },
-    {
-      id: 'americano-hot',
-      name: '아메리카노(HOT)',
-      price: 4000,
-      description: '따뜻하고 진한 핫 아메리카노',
-      image: '☕'
-    },
-    {
-      id: 'cafe-latte',
-      name: '카페라떼',
-      price: 5000,
-      description: '부드러운 우유와 에스프레소의 조화',
-      image: '🥛☕'
-    },
-    {
-      id: 'cappuccino',
-      name: '카푸치노',
-      price: 5000,
-      description: '진한 에스프레소와 벨벳같은 우유 거품',
-      image: '☕💨'
-    },
-    {
-      id: 'mocha',
-      name: '모카',
-      price: 5500,
-      description: '달콤한 초콜릿과 커피의 만남',
-      image: '🍫☕'
-    },
-    {
-      id: 'vanilla-latte',
-      name: '바닐라 라떼',
-      price: 5500,
-      description: '달콤한 바닐라 시럽이 들어간 라떼',
-      image: '🌿☕'
-    }
-  ]
+  const products = PRODUCTS
+
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type })
+  }
 
   const handleOptionChange = (productId, optionType, checked) => {
     setSelectedOptions(prev => ({
@@ -74,9 +39,19 @@ const OrderPage = () => {
 
   const handleAddToCart = (product) => {
     const stockStatus = getInventoryStatus(product.id)
+    const currentStock = inventory[product.id] || 0
     
     if (stockStatus === '품절') {
-      alert(`${product.name}은(는) 품절되었습니다.`)
+      showNotification(`${product.name}은(는) 품절되었습니다.`, 'error')
+      return
+    }
+
+    // 현재 장바구니에 있는 해당 상품의 총 수량 계산
+    const cartQuantity = getCartItemQuantity(product.id)
+    
+    // 재고 부족 체크
+    if (cartQuantity >= currentStock) {
+      showNotification(`${product.name}의 재고가 부족합니다. (재고: ${currentStock}개)`, 'error')
       return
     }
 
@@ -85,11 +60,12 @@ const OrderPage = () => {
     let additionalPrice = 0
 
     if (options.shot) {
-      optionsText.push('샷 추가')
-      additionalPrice += 500
+      optionsText.push(OPTIONS.SHOT.name)
+      additionalPrice += OPTIONS.SHOT.price
     }
     if (options.syrup) {
-      optionsText.push('시럽 추가')
+      optionsText.push(OPTIONS.SYRUP.name)
+      additionalPrice += OPTIONS.SYRUP.price
     }
 
     const cartItem = {
@@ -101,10 +77,19 @@ const OrderPage = () => {
     }
 
     addToCart(cartItem)
+    showNotification(`${product.name}이(가) 장바구니에 추가되었습니다.`, 'success')
   }
 
   return (
     <div className="order-page">
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
+      
       <div className="products-section">
         <div className="products-grid">
           {products.map(product => {

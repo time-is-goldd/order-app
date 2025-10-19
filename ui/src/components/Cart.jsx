@@ -1,13 +1,32 @@
 import { useCart } from '../context/CartContext'
 import { useOrders } from '../context/OrderContext'
+import { useInventory } from '../context/InventoryContext'
+import { validateOrder, calculateTotalPrice } from '../utils/helpers'
 import './Cart.css'
 
 const Cart = () => {
   const { items, removeFromCart, updateQuantity, clearCart, getTotalPrice } = useCart()
   const { addOrder } = useOrders()
+  const { inventory } = useInventory()
+
+  const handleQuantityChange = (index, newQuantity) => {
+    const item = items[index]
+    const currentStock = inventory[item.id] || 0
+    
+    if (newQuantity > currentStock) {
+      alert(`${item.name}의 재고가 부족합니다. (재고: ${currentStock}개)`)
+      return
+    }
+    
+    updateQuantity(index, newQuantity)
+  }
 
   const handleOrder = () => {
-    if (items.length === 0) return
+    const validation = validateOrder(items)
+    if (!validation.isValid) {
+      alert(validation.message)
+      return
+    }
 
     const orderData = {
       items: [...items],
@@ -48,7 +67,7 @@ const Cart = () => {
                 </div>
                 <div className="item-controls">
                   <button 
-                    onClick={() => updateQuantity(index, item.quantity - 1)}
+                    onClick={() => handleQuantityChange(index, item.quantity - 1)}
                     disabled={item.quantity <= 1}
                     className="quantity-btn"
                   >
@@ -56,7 +75,7 @@ const Cart = () => {
                   </button>
                   <span className="quantity">{item.quantity}</span>
                   <button 
-                    onClick={() => updateQuantity(index, item.quantity + 1)}
+                    onClick={() => handleQuantityChange(index, item.quantity + 1)}
                     className="quantity-btn"
                   >
                     +

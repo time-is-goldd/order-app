@@ -1,4 +1,5 @@
-import { createContext, useContext, useReducer } from 'react'
+import { createContext, useContext, useReducer, useEffect } from 'react'
+import { useLocalStorage } from '../hooks/useLocalStorage'
 
 const CartContext = createContext()
 
@@ -55,9 +56,15 @@ const cartReducer = (state, action) => {
 }
 
 export const CartProvider = ({ children }) => {
+  const [storedItems, setStoredItems] = useLocalStorage('cartItems', [])
   const [state, dispatch] = useReducer(cartReducer, {
-    items: []
+    items: storedItems
   })
+
+  // 로컬 스토리지와 동기화
+  useEffect(() => {
+    setStoredItems(state.items)
+  }, [state.items, setStoredItems])
 
   const addToCart = (item) => {
     dispatch({ type: 'ADD_TO_CART', payload: item })
@@ -79,13 +86,20 @@ export const CartProvider = ({ children }) => {
     return state.items.reduce((total, item) => total + (item.totalPrice * item.quantity), 0)
   }
 
+  const getCartItemQuantity = (productId) => {
+    return state.items
+      .filter(item => item.id === productId)
+      .reduce((total, item) => total + item.quantity, 0)
+  }
+
   const value = {
     ...state,
     addToCart,
     removeFromCart,
     updateQuantity,
     clearCart,
-    getTotalPrice
+    getTotalPrice,
+    getCartItemQuantity
   }
 
   return (
